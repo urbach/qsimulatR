@@ -41,11 +41,15 @@ setMethod("plot", signature(x = "qstate", y = "missing"),
             if(ngates > 0) {
               gatelist <- x@circuit$gatelist
               for(i in c(1:ngates)) {
-                if(is.na(gatelist[[i]]$bits[2])) {
-                  ipos[gatelist[[i]]$bits[1]] <- ipos[gatelist[[i]]$bits[1]] + 1
+                if (i %in% x@circuit$equaly_xcoor){ ipos[1:n] <- max(ipos) }
+                xp <- 0
+                for(j in 2:length(is.na(gatelist[[i]]$bits))){
+                  if(!is.na(gatelist[[i]]$bits[j])) { xp <- c(xp,ipos[gatelist[[i]]$bits[j]]) }
                 }
-                else {
-                  ipos[1:n] <- max(ipos) + 1
+                xp <- max(c(ipos[gatelist[[i]]$bits[1]],xp))
+                ipos[gatelist[[i]]$bits[1]] <- xp + 1
+                for(j in 2:length(is.na(gatelist[[i]]$bits))){
+                  if(!is.na(gatelist[[i]]$bits[j])) { ipos[gatelist[[i]]$bits[j]] <- xp + 1 }
                 }
               }
             }
@@ -70,6 +74,9 @@ setMethod("plot", signature(x = "qstate", y = "missing"),
               ## plot gates
               gatelist <- x@circuit$gatelist
               for(i in c(1:ngates)) {
+                if (i %in% x@circuit$equaly_xcoor)	{
+                  ipos[1:n] <- max(ipos)
+                }
                 ## single qubit gates
                 if(is.na(gatelist[[i]]$bits[2])) {
                   type <- gatelist[[i]]$type
@@ -84,8 +91,11 @@ setMethod("plot", signature(x = "qstate", y = "missing"),
                 }
                 ## multi qubit gates
                 else {
-                  xp <- max(ipos)
-                  ipos[1:n] <- xp + 1 
+                  xp <-0
+                  for(j in 3:length(is.na(gatelist[[i]]$bits))){
+                    if(!is.na(gatelist[[i]]$bits[j])) { xp <- c(xp,ipos[gatelist[[i]]$bits[j]]) }
+                  }
+                  xp <- max(c(ipos[gatelist[[i]]$bits[1]],ipos[gatelist[[i]]$bits[2]], xp))
                   if(!is.null(gatelist[[i]]$controlled)) {
                     if(gatelist[[i]]$controlled) {
                       type <- gatelist[[i]]$type
@@ -134,8 +144,31 @@ setMethod("plot", signature(x = "qstate", y = "missing"),
                            y1=ncbits+1-gatelist[[i]]$bits[2]+0.2,
                            length=0.1)
                   }
+                  ipos[gatelist[[i]]$bits[1]] <- xp + 1
+                  ipos[gatelist[[i]]$bits[2]] <- xp + 1
+                  for(j in 3:length(is.na(gatelist[[i]]$bits))){
+                    if(!is.na(gatelist[[i]]$bits[3])) { ipos[gatelist[[i]]$bits[3]] <- xp + 1 }
+                  }
                 }
               }
             }
           }
           )
+#' plot.xequal
+#'
+#' equalsizes the x-coordinates of all qubits in the plot
+#'
+#' @param x qstate object
+#'
+#' @examples
+#' x <- plot.xequal(x)
+#'
+#' @return
+#' An object of S4 class 'qstate'
+#'
+#' @export
+plot.xequal <- function(x) {
+  gatelist <- x@circuit$gatelist
+  x@circuit$equaly_xcoor <- c(x@circuit$equaly_xcoor, length(gatelist) + 1)
+  return(x)
+}
